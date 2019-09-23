@@ -1,12 +1,14 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { BsDatepickerConfig } from 'ngx-bootstrap/datepicker';
 
-import { Subscription } from 'rxjs/Subscription';
+import { Subscription } from 'rxjs';
 
-import { WalletInfo } from '../../../../shared/classes/wallet-info';
+import { WalletInfo } from '../../../../shared/models/wallet-info';
 import { ApiService } from '../../../../shared/services/api.service';
 import { GlobalService } from '../../../../shared/services/global.service';
 import { ModalService } from '../../../../shared/services/modal.service';
+import { WalletRescan } from '../../../../shared/models/wallet-rescan';
 
 @Component({
   selector: 'app-resync',
@@ -15,93 +17,111 @@ import { ModalService } from '../../../../shared/services/modal.service';
 })
 export class ResyncComponent implements OnInit, OnDestroy {
 
-  constructor(private globalService: GlobalService, private apiService: ApiService, private genericModalService: ModalService) { }
+  constructor(private globalService: GlobalService, private apiService: ApiService, private genericModalService: ModalService, private fb: FormBuilder) { }
   private walletName: string;
   private lastBlockSyncedHeight: number;
   private chainTip: number;
   private isChainSynced: Boolean;
-  public isSyncing: Boolean = true;
   private generalWalletInfoSubscription: Subscription;
 
+  public isSyncing: Boolean = true;
+  public minDate = new Date("2009-08-09");
+  public maxDate = new Date();
+  public bsConfig: Partial<BsDatepickerConfig>;
+  public rescanWalletForm: FormGroup;
 
   ngOnInit() {
     this.walletName = this.globalService.getWalletName();
     this.startSubscriptions();
+    this.buildRescanWalletForm();
+    this.bsConfig = Object.assign({}, { showWeekNumbers: false, containerClass: 'theme-dark-blue' });
   }
 
   ngOnDestroy() {
     this.cancelSubscriptions();
   }
 
+  private buildRescanWalletForm(): void {
+    this.rescanWalletForm = this.fb.group({
+      "walletDate": ["", Validators.required],
+    });
+
+    this.rescanWalletForm.valueChanges
+      .subscribe(data => this.onValueChanged(data));
+
+    this.onValueChanged();
+  }
+
+  onValueChanged(data?: any) {
+    if (!this.rescanWalletForm) { return; }
+    const form = this.rescanWalletForm;
+    for (const field in this.formErrors) {
+      this.formErrors[field] = '';
+      const control = form.get(field);
+      if (control && control.dirty && !control.valid) {
+        const messages = this.validationMessages[field];
+        for (const key in control.errors) {
+          this.formErrors[field] += messages[key] + ' ';
+        }
+      }
+    }
+  }
+
+  formErrors = {
+    'walletDate': ''
+  };
+
+  validationMessages = {
+    'walletDate': {
+      'required': 'Please choose the date the wallet should sync from.'
+    }
+  };
+
   public onResyncClicked() {
+    let rescanDate = new Date(this.rescanWalletForm.get("walletDate").value);
+    rescanDate.setDate(rescanDate.getDate() - 1);
+
+    let rescanData = new WalletRescan(
+      this.walletName,
+      rescanDate,
+      false,
+      true
+    )
     this.apiService
-      .removeTransaction(this.walletName)
+      .rescanWallet(rescanData)
       .subscribe(
         response => {
-          if (response.status >= 200 && response.status < 400) {
-            this.genericModalService.openModal("Resyncing", "Your wallet is now resyncing. The time remaining depends on the size and creation time of your wallet. The wallet dashboards shows your progress.");
-          }
-        },
-        error => {
-          console.log(error);
-          if (error.status === 0) {
-            this.genericModalService.openModal(null, null);
-          } else if (error.status >= 400) {
-            if (!error.json().errors[0]) {
-              console.log(error);
-            }
-            else {
-              this.genericModalService.openModal(null, error.json().errors[0].message);
-            }
-          }
+          this.genericModalService.openModal("Rescanning", "Your wallet is now rescanning. The time remaining depends on the size and creation time of your wallet. The wallet dashboard shows your progress.");
         }
-      )
-    ;
+      );
   }
 
   private getGeneralWalletInfo() {
     let walletInfo = new WalletInfo(this.walletName);
     this.generalWalletInfoSubscription = this.apiService.getGeneralInfo(walletInfo)
       .subscribe(
-        response =>  {
-          if (response.status >= 200 && response.status < 400) {
-            let generalWalletInfoResponse = response.json();
-            this.lastBlockSyncedHeight = generalWalletInfoResponse.lastBlockSyncedHeight;
-            this.chainTip = generalWalletInfoResponse.chainTip;
-            this.isChainSynced = generalWalletInfoResponse.isChainSynced;
+        response => {
+          let generalWalletInfoResponse = response;
+          this.lastBlockSyncedHeight = generalWalletInfoResponse.lastBlockSyncedHeight;
+          this.chainTip = generalWalletInfoResponse.chainTip;
+          this.isChainSynced = generalWalletInfoResponse.isChainSynced;
 
-            if (this.isChainSynced && this.lastBlockSyncedHeight == this.chainTip) {
-              this.isSyncing = false;
-            } else {
-              this.isSyncing = true;
-            }
+          if (this.isChainSynced && this.lastBlockSyncedHeight == this.chainTip) {
+            this.isSyncing = false;
+          } else {
+            this.isSyncing = true;
           }
         },
         error => {
-          console.log(error);
-          if (error.status === 0) {
-            this.cancelSubscriptions();
-            this.genericModalService.openModal(null, null);
-          } else if (error.status >= 400) {
-            if (!error.json().errors[0]) {
-              console.log(error);
-            }
-            else {
-              if (error.json().errors[0].description) {
-                this.genericModalService.openModal(null, error.json().errors[0].message);
-              } else {
-                this.cancelSubscriptions();
-                this.startSubscriptions();
-              }
-            }
-          }
+          this.cancelSubscriptions();
+          this.startSubscriptions();
         }
       )
-    ;
+      ;
   };
 
   private cancelSubscriptions() {
-    if(this.generalWalletInfoSubscription) {
+    if (this.generalWalletInfoSubscription) {
       this.generalWalletInfoSubscription.unsubscribe();
     }
   };

@@ -17,6 +17,7 @@
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">14.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <LastActiveSolutionConfig>Debug|Any CPU</LastActiveSolutionConfig>
+    <ToolsVersionPromptShown>2.8</ToolsVersionPromptShown>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
@@ -99,15 +100,12 @@
     <Content Include="README.md" />
     <Content Include="FullNode.Documentation\API contribution guidelines.md" />
     <Content Include="FullNode.Documentation\ApiSpecification.md" />
-    <Content Include="FullNode.UI\.angular-cli.json" />
     <Content Include="FullNode.UI\electron-builder.json" />
     <Content Include="FullNode.UI\package.json" />
     <Content Include="FullNode.UI\tsconfig.json" />
     <Content Include="FullNode.UI\tslint.json" />
     <TypeScriptCompile Include="FullNode.UI\main.ts" />
-    <Compile Include="FullNode.UI\karma.conf.js" />
     <Compile Include="FullNode.UI\postcss.config.js" />
-    <Compile Include="FullNode.UI\protractor.conf.js" />
     <Content Include="FullNode.UI\e2e\tsconfig.e2e.json" />
     <TypeScriptCompile Include="FullNode.UI\e2e\app.e2e-spec.ts" />
     <TypeScriptCompile Include="FullNode.UI\e2e\app.po.ts" />
@@ -115,9 +113,21 @@
     <Content Include="FullNode.UI\src\styles.css" />
     <Content Include="FullNode.UI\src\tsconfig.app.json" />
     <Content Include="FullNode.UI\src\tsconfig.spec.json" />
-    <TypeScriptCompile Include="FullNode.UI\src\app\shared\classes\address-label.ts" />
-    <TypeScriptCompile Include="FullNode.UI\src\app\shared\classes\serialDisposable.ts" />
-    <TypeScriptCompile Include="FullNode.UI\src\app\shared\services\features.service.ts" />
+    <TypeScriptCompile Include="FullNode.UI\src\app\shared\http-interceptors\api-interceptor.ts" />
+    <TypeScriptCompile Include="FullNode.UI\src\app\shared\models\address-label.ts" />
+    <TypeScriptCompile Include="FullNode.UI\src\app\shared\models\error-response.ts" />
+    <TypeScriptCompile Include="FullNode.UI\src\app\shared\models\fee-estimation.ts" />
+    <TypeScriptCompile Include="FullNode.UI\src\app\shared\models\mnemonic.ts" />
+    <TypeScriptCompile Include="FullNode.UI\src\app\shared\models\node-status.ts" />
+    <TypeScriptCompile Include="FullNode.UI\src\app\shared\models\sidechain-fee-estimation.ts" />
+    <TypeScriptCompile Include="FullNode.UI\src\app\shared\models\transaction-building.ts" />
+    <TypeScriptCompile Include="FullNode.UI\src\app\shared\models\transaction-info.ts" />
+    <TypeScriptCompile Include="FullNode.UI\src\app\shared\models\transaction-sending.ts" />
+    <TypeScriptCompile Include="FullNode.UI\src\app\shared\models\wallet-creation.ts" />
+    <TypeScriptCompile Include="FullNode.UI\src\app\shared\models\wallet-info.ts" />
+    <TypeScriptCompile Include="FullNode.UI\src\app\shared\models\wallet-load.ts" />
+    <TypeScriptCompile Include="FullNode.UI\src\app\shared\models\wallet-recovery.ts" />
+    <TypeScriptCompile Include="FullNode.UI\src\app\shared\models\wallet-rescan.ts" />
     <TypeScriptCompile Include="FullNode.UI\src\app\wallet\address-book\address-book.component.spec.ts" />
     <TypeScriptCompile Include="FullNode.UI\src\app\wallet\address-book\address-book.component.ts" />
     <TypeScriptCompile Include="FullNode.UI\src\app\wallet\address-book\modals\add-new-address\add-new-address.component.spec.ts" />
@@ -168,7 +178,6 @@
     <TypeScriptCompile Include="FullNode.UI\src\app\app-routing.module.ts" />
     <TypeScriptCompile Include="FullNode.UI\src\app\app.component.spec.ts" />
     <TypeScriptCompile Include="FullNode.UI\src\app\app.component.ts" />
-    <TypeScriptCompile Include="FullNode.UI\src\app\app.config.ts" />
     <TypeScriptCompile Include="FullNode.UI\src\app\app.module.ts" />
     <TypeScriptCompile Include="FullNode.UI\src\environments\environment.dev.ts" />
     <TypeScriptCompile Include="FullNode.UI\src\environments\environment.local.ts" />
@@ -205,15 +214,6 @@
     <Content Include="FullNode.UI\src\app\setup\create\show-mnemonic\show-mnemonic.component.css" />
     <TypeScriptCompile Include="FullNode.UI\src\app\setup\create\show-mnemonic\show-mnemonic.component.spec.ts" />
     <TypeScriptCompile Include="FullNode.UI\src\app\setup\create\show-mnemonic\show-mnemonic.component.ts" />
-    <TypeScriptCompile Include="FullNode.UI\src\app\shared\classes\fee-estimation.ts" />
-    <TypeScriptCompile Include="FullNode.UI\src\app\shared\classes\mnemonic.ts" />
-    <TypeScriptCompile Include="FullNode.UI\src\app\shared\classes\transaction-building.ts" />
-    <TypeScriptCompile Include="FullNode.UI\src\app\shared\classes\transaction-info.ts" />
-    <TypeScriptCompile Include="FullNode.UI\src\app\shared\classes\transaction-sending.ts" />
-    <TypeScriptCompile Include="FullNode.UI\src\app\shared\classes\wallet-creation.ts" />
-    <TypeScriptCompile Include="FullNode.UI\src\app\shared\classes\wallet-info.ts" />
-    <TypeScriptCompile Include="FullNode.UI\src\app\shared\classes\wallet-load.ts" />
-    <TypeScriptCompile Include="FullNode.UI\src\app\shared\classes\wallet-recovery.ts" />
     <TypeScriptCompile Include="FullNode.UI\src\app\shared\directives\auto-focus.directive.spec.ts" />
     <TypeScriptCompile Include="FullNode.UI\src\app\shared\directives\auto-focus.directive.ts" />
     <TypeScriptCompile Include="FullNode.UI\src\app\shared\directives\password-validation.directive.spec.ts" />
@@ -293,10 +293,11 @@
     <Folder Include="FullNode.UI\src\app\setup\create\show-mnemonic" />
     <Folder Include="FullNode.UI\src\app\setup\recover" />
     <Folder Include="FullNode.UI\src\app\shared" />
-    <Folder Include="FullNode.UI\src\app\shared\classes" />
     <Folder Include="FullNode.UI\src\app\shared\components" />
     <Folder Include="FullNode.UI\src\app\shared\components\generic-modal" />
     <Folder Include="FullNode.UI\src\app\shared\directives" />
+    <Folder Include="FullNode.UI\src\app\shared\http-interceptors\" />
+    <Folder Include="FullNode.UI\src\app\shared\models\" />
     <Folder Include="FullNode.UI\src\app\shared\pipes" />
     <Folder Include="FullNode.UI\src\app\shared\services" />
     <Folder Include="FullNode.UI\src\app\wallet" />

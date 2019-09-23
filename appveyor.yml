@@ -51,8 +51,8 @@ install:
       Write-Host "--> git submodule" -foregroundcolor "magenta"
       git submodule update --init --recursive
       
-      Write-Host "--> node 6" -foregroundcolor "magenta"
-      Install-Product node 6
+      Write-Host "--> node 10" -foregroundcolor "magenta"
+      Install-Product node 10
       
       Write-Host "--> npm config" -foregroundcolor "magenta"
       npm config set unsafe-perm=true
@@ -132,7 +132,7 @@ deploy:
 - provider: GitHub
   tag: $(APPVEYOR_REPO_TAG_NAME)
   auth_token:
-    secure: HDi4qCaTuAtnvLY6H3WnLJrKJEtCOCe/ThP4UB/jNQCfTfdlBEoZbhAsMfu9/cMc
+    secure: DqmKdPBeEmqHUsYMGrrPnpRroaTWHObfGD1KOogoErTQZKNDGkPe4P0RTLYUOuZ4
   draft: false
   prerelease: true
   force_update: true

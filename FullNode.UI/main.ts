@@ -1,30 +1,43 @@
-import { app, BrowserWindow, ipcMain, Menu, nativeImage, screen, Tray } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, nativeImage, Tray } from 'electron';
 import * as path from 'path';
 import * as url from 'url';
 import * as os from 'os';
+if (os.arch() == 'arm') {
+  app.disableHardwareAcceleration();
+}
 
 let serve;
 let testnet;
+let sidechain;
+let nodaemon;
 const args = process.argv.slice(1);
 serve = args.some(val => val === "--serve" || val === "-serve");
-testnet = false; // TODO: Add testnet. args.some(function (val) { return val === "--testnet" || val === "-testnet"; });
+testnet = args.some(val => val === "--testnet" || val === "-testnet");
+sidechain = args.some(val => val === "--sidechain" || val === "-sidechain");
+nodaemon = args.some(val => val === "--nodaemon" || val === "-nodaemon");
 
 let apiPort;
-if (testnet) {
+if (testnet && !sidechain) {
+  apiPort = 42221;
+} else if (!testnet && !sidechain) {
   apiPort = 42220;
-} else {
-  apiPort = 42220;
+} else if (sidechain && testnet) {
+  apiPort = 42221;
+} else if (sidechain && !testnet) {
+  apiPort = 42221;
 }
 
 ipcMain.on('get-port', (event, arg) => {
   event.returnValue = apiPort;
 });
 
-try {
-  require('dotenv').config();
-} catch {
-  console.log('asar');
-}
+ipcMain.on('get-testnet', (event, arg) => {
+  event.returnValue = testnet;
+});
+
+ipcMain.on('get-sidechain', (event, arg) => {
+  event.returnValue = sidechain;
+});
 
 require('electron-context-menu')({
   showInspectElement: serve
@@ -63,7 +76,7 @@ function createWindow() {
 
   // Emitted when the window is going to close.
   mainWindow.on('close', function (e) {
-    closeX42Api();
+    shutdownDaemon(apiPort);
   });
 
   // Emitted when the window is closed.
@@ -81,10 +94,14 @@ function createWindow() {
 // Some APIs can only be used after this event occurs.
 app.on('ready', () => {
   if (serve) {
-    console.log("x42 UI was started in development mode. This requires the user to be running the x42 Full Node Daemon.")
+    console.log("x42 UI was started in development mode. This requires the user to be running the x42 Full Node Daemon themself.")
   }
   else {
-    startX42Api();
+    if (sidechain && !nodaemon) {
+      startDaemon("x42.x42D");
+    } else if (!nodaemon) {
+      startDaemon("x42.x42D")
+    }
   }
   createTray();
   createWindow();
@@ -93,17 +110,24 @@ app.on('ready', () => {
   }
 });
 
+/* 'before-quit' is emitted when Electron receives 
+ * the signal to exit and wants to start closing windows */
 app.on('before-quit', () => {
-  closeX42Api();
+  if (!serve && !nodaemon) {
+    shutdownDaemon(apiPort);
+  }
+});
+
+app.on('quit', () => {
+  if (!serve && !nodaemon) {
+    shutdownDaemon(apiPort);
+  }
 });
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
-  // On OS X it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  shutdownDaemon(apiPort);
+  app.quit();
 });
 
 app.on('activate', () => {
@@ -114,21 +138,22 @@ app.on('activate', () => {
   }
 });
 
-function closeX42Api() {
+function shutdownDaemon(portNumber) {
   var http = require('http');
   var body = JSON.stringify({});
 
   var request = new http.ClientRequest({
-    hostname: "localhost",
-    port: 42220,
-    path: "/api/node/shutdown",
-    method: "POST",
+    method: 'POST',
+    hostname: 'localhost',
+    port: portNumber,
+    path: '/api/node/shutdown',
     headers: {
       "Content-Type": "application/json",
       "Content-Length": Buffer.byteLength(body)
     }
   })
 
+  request.write('true');
   request.on('error', function (e) { });
   request.on('timeout', function (e) { request.abort(); });
   request.on('uncaughtException', function (e) { request.abort(); });
@@ -136,31 +161,24 @@ function closeX42Api() {
   request.end(body);
 };
 
-function startX42Api() {
-  var X42Process;
-  const spawnX42 = require('child_process').spawn;
+function startDaemon(daemonName) {
+  var daemonProcess;
+  var spawnDaemon = require('child_process').spawn;
 
-  //Start X42 Daemon
-  let apiPath = path.resolve(__dirname, 'assets//daemon//x42.x42D');
+  var daemonPath;
   if (os.platform() === 'win32') {
-    apiPath = path.resolve(__dirname, '..\\..\\resources\\daemon\\x42.x42D.exe');
+    daemonPath = path.resolve(__dirname, '..\\..\\resources\\daemon\\' + daemonName + '.exe');
   } else if (os.platform() === 'linux') {
-    apiPath = path.resolve(__dirname, '..//..//resources//daemon//x42.x42D');
+    daemonPath = path.resolve(__dirname, '..//..//resources//daemon//' + daemonName);
   } else {
-    apiPath = path.resolve(__dirname, '..//..//resources//daemon//x42.x42D');
+    daemonPath = path.resolve(__dirname, '..//..//resources//daemon//' + daemonName);
   }
 
-  if (!testnet) {
-    X42Process = spawnX42(apiPath, {
-      detached: true
-    });
-  } else if (testnet) {
-    X42Process = spawnX42(apiPath, ['-testnet'], {
-      detached: true
-    });
-  }
+  daemonProcess = spawnDaemon(daemonPath, [args.join(' ').replace('--', '-')], {
+    detached: true
+  });
 
-  X42Process.stdout.on('data', (data) => {
+  daemonProcess.stdout.on('data', (data) => {
     writeLog(`x42: ${data}`);
   });
 }
@@ -202,6 +220,7 @@ function createTray() {
   });
 
   app.on('window-all-closed', function () {
+    shutdownDaemon(apiPort);
     if (systemTray) systemTray.destroy();
   });
 };
